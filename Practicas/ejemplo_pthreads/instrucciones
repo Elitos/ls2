@@ -1,0 +1,4 @@
+instalar pthread con:
+
+sudo apt-get install build-essential
+sudo apt-get install libpthread-stubs0-dev
