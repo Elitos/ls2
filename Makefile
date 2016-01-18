@@ -1,10 +1,10 @@
 #DIR_OUTPUT
 #DIR_SRC
 #NAME_EXEC
-main: src/main.o src/functions.o
-	@gcc -o build/main -I src/ src/main.o src/functions.o 
+main: src/main.o src/functions.o 
+	@gcc -o build/main  -lpthread -I src/ src/main.o src/functions.o -lpthread
 	@rm src/*.o
-	@echo "Compilacion realizada"
+	@echo "Compilacion realizada con exito"
 	
 build/main.o: src/main.c
 	@gcc -o src/main.o src/main.c -c

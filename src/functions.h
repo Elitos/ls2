@@ -1,5 +1,5 @@
 /*
-LABORATORIO 1 SISTEMAS OPERATIVOS 2-2015
+LABORATORIO 2 SISTEMAS OPERATIVOS 2-2015
 Integrantes
 Elías Gonzalez 18.248.829-1
 Prof: Fernando Rannou - Ayudante: Luis Loyola
@@ -21,70 +21,18 @@ includes a las librerias necesarias.
 #include <sys/wait.h>
 #include <time.h>
 
-#define OK       0
-#define NO_INPUT 1
-#define TOO_LONG 2
-#define LEER 0
-#define ESCRIBIR 1
-#define NUM_MATRIZ 26
+int getTam_lista (int * l);
 
-typedef struct $Matris{
-  char name;
-  int n;
-  int m;
-  int **matriz;
-}Matrix;
+int * put_elemento( int * l, int a);
 
-// Padre
+void find_delete(int * l, int a);
 
-int getLine(char *prmpt, char *buff, size_t sz);
+void delete_element(int * l, int i);
 
-int getComando(char *comando, char *array[]);
+int Getpivot(int *array, int I, int D);
 
-void removeChar(char *str, char garbage);
+void Qsort(int *array, int I, int D);
 
-int isComandoP_O_H(char *array[], int nargs);
+int find_min_size(int ** l, int nl);
 
-int getFuncion(char *array[], int nargs);
-
-// Hijo y Padre 
-
-int **inicializarMatrizMem(int n, int m);
-
-void inicializarTodasMatrizMem(Matrix *arr[]);
-
-void mostrarMatriz(Matrix M);
-
-void removeChar(char *str, char garbage);
-
-int getComandos(char *comando, char *array[], int nargs);
-
-void fileToMatriz(Matrix * M, char *filename, char name_matriz);
-
-void matrizToFile(Matrix *M, char *filename, char name_matriz);
-
-void cleanMatriz(Matrix *M);
-
-void MaToMa(Matrix *destino, Matrix *inicio);
-
-int validarSumaResta(Matrix A, Matrix B);
-
-void ASumBToC(Matrix A, Matrix B, Matrix *C);
-
-void AResBToC(Matrix A, Matrix B, Matrix *C);
-
-void AmulbToB(Matrix A, int b, Matrix *B);
-
-int numPlaces (int n);
-
-int tam_matriz_string(Matrix A);
-
-char *MatrizToS(Matrix A);
-
-char *MatrizToS2(Matrix A, Matrix B);
-
-void SToMatriz(char *buffer, Matrix *A);
-
-void ATransToB(Matrix A, Matrix *B);
-
-void AmulBToC(Matrix A, Matrix B, Matrix *C);
+int find_element(int *l, int a);
