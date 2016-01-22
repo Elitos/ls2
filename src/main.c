@@ -28,23 +28,12 @@ double * tiempos_x_grupo; // Guarda los tiempos por grupo, segun index
 pthread_mutex_t  * arrMutex; // Array mutex por grupo y lectura
 pthread_mutex_t t_mutex = PTHREAD_MUTEX_INITIALIZER; // PARA FINALIZAR EL CLOCK
 
-typedef struct $hebra{
-  int nGrupoG;
-  int nHiloG;
-  float t_init;
-  float t_end;
-  float t_all;
-  double * t_x2[2]; // Para calculos numericos
-  pthread_t thread_h;
-}hebra;
-hebra * arrhebras;
-
 pthread_barrier_t barrera_inicial;  // Todas partan al mismo tiempo
 pthread_barrier_t * arr_barrera_1_a_1; // Todas lean u no se adelante ninguna hebra
 pthread_barrier_t * arr_barrera_1_a_M; // Todas accedan a la matriz a la vez.
-pthread_barrier_t * arr_barrera_1_a_sprima;
-pthread_barrier_t * arr_barrera_1_s_grupo;
-pthread_barrier_t * arr_barrera_1_a_gs;
+pthread_barrier_t * arr_barrera_1_a_sprima; // Todas modifiquen sprima en una sola ocacion
+pthread_barrier_t * arr_barrera_1_s_grupo; // Los grupos esperen a que otras hebras terminen de procesar
+pthread_barrier_t * arr_barrera_1_a_gs; // Las hebras esperen a que todas modifiquen s'
 
 
 void *funcionHebras(void *args) {
@@ -86,13 +75,11 @@ void *funcionHebras(void *args) {
     pthread_mutex_unlock(&arrMutex[Grupo_ID]);
 
     amplitud_sub_lista = indice_hasta - indice_desde +1;
-    
     if(amplitud_sub_lista > 1){ // Largo de la lista necesita reordenar
       pthread_mutex_lock(&t_mutex);
       Qsort(matriz[i],indice_desde,indice_hasta);
       pthread_mutex_unlock(&t_mutex);
     }
-
     pthread_barrier_wait(&arr_barrera_1_a_sprima[Grupo_ID]);
     if(Hebra_ID==0){
       pthread_mutex_lock(&arrMutex[Grupo_ID]);
@@ -105,7 +92,6 @@ void *funcionHebras(void *args) {
       pthread_mutex_unlock(&arrMutex[Grupo_ID]);
     }
     pthread_barrier_wait(&arr_barrera_1_s_grupo[Grupo_ID]);
-    
     int indice;
     for( j = 0 ; j < tam_lista_s ; j++){ //para cada elemento de s_grupo
       indice= indice_desde;
@@ -143,39 +129,34 @@ void *funcionHebras(void *args) {
 
 int main(int argc, char ** argv) {
   char *SnHebras; char *SnGrupos; char *File_name; char opcion;
-  
   while((opcion = getopt(argc, argv,"g:h:i:"))!= -1){
-  if(opcion == -1){
-      printf("Entradas no validas\nFormato entrada: ./main -i entrada.dat -g 5 -h 4\n");
-      abort();
+    if(opcion == -1){
+        printf("Entradas no validas\nFormato entrada: ./main -i entrada.dat -g 5 -h 4\n");
+        abort();
+    }
+    switch (opcion){
+      case 'g' : 
+        SnGrupos = optarg;
+        break;
+      case 'h' : 
+        SnHebras = optarg;
+        break;
+      case 'i' : 
+        File_name = optarg;
+        break;
+      default : /*Errores*/
+        printf("Entradas no validas\nFormato entrada: ./main -i entrada.dat -g 5 -h 4\n");
+        abort();
+    }
   }
-  switch (opcion){
-    case 'g' : 
-      SnGrupos = optarg;
-      break;
-    case 'h' : 
-      SnHebras = optarg;
-      break;
-    case 'i' : 
-      File_name = optarg;
-      break;
-    default : /*Errores*/
-      printf("Entradas no validas\nFormato entrada: ./main -i entrada.dat -g 5 -h 4\n");
-      abort();
-  }
-  }
-
   nGrupos = atoi(SnGrupos); nHebras = atoi(SnHebras); 
   if(nGrupos < 1 || nHebras < 1){
      printf("Entrada no valida, hebras y grupos\n como minimo valor debe ser 1\n");
      abort();
   }
-
-  FILE * archivo_entrada =  fopen(File_name,"r");
-
   matriz = (int **)malloc(sizeof (int**));
   matriz[0]= (int *)malloc(sizeof (int*));
-
+  FILE * archivo_entrada =  fopen(File_name,"r");
   int i; int j;
   int cX = 1; int cY = 1;
   char c = 'c';
@@ -244,145 +225,33 @@ int main(int argc, char ** argv) {
   // Relaciono hebras con grupos
   int ch = 0;
   for (i = 0; i < nGrupos; i++) {
-    for( j = 0 ; j < nHebras ; j++){
-      arrhebras[ch].nGrupoG = i; arrhebras[ch].nHiloG = j;
-      ch++;
-    } 
+    for( j = 0 ; j < nHebras ; j++){ arrhebras[ch].nGrupoG = i; arrhebras[ch].nHiloG = j; ch++; } 
   }
   
-  pthread_barrier_init(&barrera_inicial, NULL, nHebras_total);
-  noSeEncuentran = (int *)malloc(largoMinL* sizeof(int)); noSeEncuentran[0] = '\0';
-  arr_barrera_1_a_1 = (pthread_barrier_t *)malloc(nGrupos*(sizeof(pthread_barrier_t)));
-  arr_barrera_1_a_M = (pthread_barrier_t *)malloc(nGrupos*(sizeof(pthread_barrier_t)));
-  arr_barrera_1_a_sprima = (pthread_barrier_t *)malloc(nGrupos*(sizeof(pthread_barrier_t)));
-  arr_barrera_1_s_grupo = (pthread_barrier_t *)malloc(nGrupos*(sizeof(pthread_barrier_t)));
+  // creo barreras coordinacion
+  pthread_barrier_init(&barrera_inicial, NULL, nHebras_total); noSeEncuentran = (int *)malloc(largoMinL* sizeof(int)); noSeEncuentran[0] = '\0';
+  arr_barrera_1_a_1 = (pthread_barrier_t *)malloc(nGrupos*(sizeof(pthread_barrier_t))); arr_barrera_1_a_M = (pthread_barrier_t *)malloc(nGrupos*(sizeof(pthread_barrier_t)));
+  arr_barrera_1_a_sprima = (pthread_barrier_t *)malloc(nGrupos*(sizeof(pthread_barrier_t))); arr_barrera_1_s_grupo = (pthread_barrier_t *)malloc(nGrupos*(sizeof(pthread_barrier_t)));
   arr_barrera_1_a_gs = (pthread_barrier_t *)malloc(nGrupos*(sizeof(pthread_barrier_t)));
 
+// Instacio barreras
   for( i = 0 ; i < nGrupos ; i++){
-    pthread_barrier_init(&arr_barrera_1_a_1[i], NULL, nHebras);
-    pthread_barrier_init(&arr_barrera_1_a_M[i], NULL, nHebras);
-    pthread_barrier_init(&arr_barrera_1_a_sprima[i], NULL, nHebras);
-    pthread_barrier_init(&arr_barrera_1_s_grupo[i], NULL, nHebras);
+    pthread_barrier_init(&arr_barrera_1_a_1[i], NULL, nHebras); pthread_barrier_init(&arr_barrera_1_a_M[i], NULL, nHebras);
+    pthread_barrier_init(&arr_barrera_1_a_sprima[i], NULL, nHebras); pthread_barrier_init(&arr_barrera_1_s_grupo[i], NULL, nHebras);
     pthread_barrier_init(&arr_barrera_1_a_gs[i], NULL, nHebras);
   }
-
+  //Arranco hebras 
   for( i = 0 ; i < nHebras_total; i++){
     pthread_create(&arrhebras[i].thread_h, NULL, funcionHebras, (void*)i);
   }
-
+  // Espero hebras
   for (i = 0 ; i < nHebras_total; i++) {
     pthread_join(arrhebras[i].thread_h, NULL); 
   }
+  // Genero archivo
+  archivo_salida(nGrupos,nHebras, nListas, s_grupo,nHebras_total,arrhebras);
 
-  ////////////////////////////////////////////////// Time analisis
-
-  double  t_start = arrhebras[0].t_init;
-  double  * t_lastAdd = (double *) malloc((nGrupos)* sizeof(double));
-  double  * t_grupo = (double *) malloc((nGrupos)* sizeof(double));
-
-  for(i=0;i<nHebras_total;i++){ // A todas acctualizo tiempo de inicio
-    if(arrhebras[i].t_init < t_start){
-      t_start = arrhebras[i].t_init;
-    }
-  }
-
-  int indice = 0; // Sumatorea de tiempo grupal
-  for( i = 0 ; i < nGrupos ; i++){
-    t_lastAdd[i] = arrhebras[(arrhebras[indice].nGrupoG)*(nHebras)].t_end;
-    for( j = 0 ; j < nHebras ; j++){     
-      arrhebras[indice].t_all = arrhebras[indice].t_end-t_start;
-      if(arrhebras[indice].t_end > t_lastAdd[i]){
-        t_lastAdd[i] = arrhebras[indice].t_end;
-      }
-      indice++;
-    }
-    t_grupo[i]= t_lastAdd[i]-t_start;
-  }
-
-  // Lugares
-  int ID_primero = 0;
-  int ID_segundo = 0;
-  int ID_tercero = 0;
-
-  for ( i = 0; i < nGrupos; i++){
-    if(t_grupo[i] < t_grupo[ID_primero]){ ID_primero = i;}
-  }
-  if(nGrupos > 1){
-    while(ID_segundo == ID_primero){
-      ID_segundo++;
-      if(ID_segundo >= nGrupos){ ID_segundo=0; }
-    }
-    for ( i = 0; i < nGrupos;i++){
-      if(i!=ID_primero){
-        if(t_grupo[i]<t_grupo[ID_segundo]){ ID_segundo=i; }
-      }
-    }
-  }
-  if(nGrupos>2){
-    while(ID_tercero==ID_primero || ID_tercero==ID_segundo){
-      ID_tercero++;
-      if(ID_tercero>=nGrupos){ ID_tercero=0; }
-    }
-    for ( i = 0; i < nGrupos ; i++){
-      if(i!=ID_primero && i != ID_segundo){ 
-        if(t_grupo[i]<t_grupo[ID_tercero]){ ID_tercero=i; }
-      }
-    }
-  }
-
-  //Calculo hebra mas eficiente
-  int ID_h_eficiente = 0;
-  int ID_h_eficiente_grupo = 0;
-  int t_eficiente = arrhebras[0].t_all;
-  for( i = 0; i < nHebras_total; i++){
-    if(arrhebras[i].t_all < t_eficiente){
-      t_eficiente = arrhebras[i].t_all;
-      ID_h_eficiente = arrhebras[i].nHiloG;
-      ID_h_eficiente_grupo =  arrhebras[i].nGrupoG;
-    }
-  }
-  double t_hs[nHebras_total][nListas];
-  for( i = 0 ; i < nHebras_total ; i++){
-    for( j = 0 ; j < nListas ; j++){
-      double var_temp = arrhebras[i].t_x2[1][j] - arrhebras[i].t_x2[0][j];
-      t_hs[i][j] = var_temp;
-    }
-  }
-  double t_prom_hebra[nHebras_total];
-  for ( i = 0 ; i < nHebras_total ; i++){
-    int t_prom_add = 0;
-    for( j = 0; j < nListas ; j++){
-      t_prom_add = t_prom_add + t_hs[i][j];
-    }
-    t_prom_hebra[i] = t_prom_add/nListas;
-  }
-
-  int ID_h_eficiente_prom = 0; 
-  int ID_h_eficiente_grupo_prom = 0;
-  int t_eficiente_prom = t_prom_hebra[0];
-
-  for (i=0;i<nHebras_total;i++){
-    if(t_prom_hebra[i]<t_eficiente_prom){
-      t_eficiente_prom = t_prom_hebra[i];
-      ID_h_eficiente_prom = arrhebras[i].nHiloG;
-      ID_h_eficiente_grupo_prom =  arrhebras[i].nGrupoG;
-    }
-  }
-
-  printf("Creando archivo salida...\n");
-  FILE* archivo_salida = fopen("resultados.txt", "w");
-  fprintf(archivo_salida,"Número del equipo que obtuvo el primer lugar: %i \nTiempo del equipo que obtuvo el primer lugar: %.100g \n",ID_primero, t_grupo[ID_primero]);
-  fprintf(archivo_salida,"Número del equipo que obtuvo el segundo lugar: %i \nTiempo del equipo que obtuvo el segundo lugar: %.100g \n",ID_segundo, t_grupo[ID_segundo]);
-  fprintf(archivo_salida,"Número del equipo que obtuvo el tercer lugar: %i \nTiempo del equipo que obtuvo el tercer lugar: %.100g \n",ID_tercero, t_grupo[ID_tercero]);
-  fprintf(archivo_salida,"Hebra más_grupo eficiente: %d del grupo %d.\n",ID_h_eficiente, ID_h_eficiente_grupo);
-  fprintf(archivo_salida,"Hebra más_grupo eficiente en promedio: %d del grupo %d.\n", ID_h_eficiente_prom,ID_h_eficiente_grupo_prom);
-  fprintf(archivo_salida,"Intersección de las listas: ");
-  for( i = 0; i < getTam_lista(s_grupo[0]) ; i++){
-    fprintf(archivo_salida, "%i ",s_grupo[0][i]);
-  }
-  fprintf(archivo_salida,"\n");
-  fclose(archivo_salida);
-  printf("Archivo salida creado.\n");
 }
+
 
 

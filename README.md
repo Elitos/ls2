@@ -17,7 +17,7 @@ En el archivo se incluyen:
 **********************************************************
 La finalidad de éste archivo es explicar paso a paso el proceso de compilación del programa.
 Para compilar es necesario utilizar la terminal de Linux, y seguir los siguientes pasos:
-- Abrir el directorio donde se ha descomprimido el archivo, utilizando el comando "cd", por ejemplo ~$ cd Escritorio/Laboratorio 1 Sistope
+- Abrir el directorio donde se ha descomprimido el archivo, utilizando el comando "cd", por ejemplo ~$ cd Escritorio/Laboratorio 2 Sistope
 - Verificar que los archivos descritos anteriormente se encuentren en dicho directorio
 - Escribir el comando "make" en la terminal.
 
@@ -25,23 +25,9 @@ Una vez realizados los pasos anteriormente descritos, el programa se compilara e
 
 Pasos para su ejecución.
 
-Para ejemplificar el uso del programa, buscaremos la palabra "build" en el directorio /Laboratorio 1 Sistope/build/*.
+Para ejemplificar el uso del programa, buscaremos la palabra "build" en el directorio /Laboratorio 2 Sistope/build/*.
 
-En la terminal de linux, para ejecutar el programa importa el orden en el cual se ingresen los parametros. Para ejecutar el programa estando en build, ejecutamos ./main.
-Para ingresar una linea de comando, se debe ingreser de la siguente forma "A = A * B", todos los caracteres o grupos de string separados por un espacio. otro ejemplo es "load A A.txt" o "load A "A.txt""
+En la terminal de linux, para ejecutar el programa importa el orden en el cual se ingresen los parametros. Para ejecutar el programa estando en build, ejecutamos  "./main -i entrada.dat -g 5 -h 4" por ejemplo.
 
-las funciones que acepta el programa son las siguentes:
-● load A “A.txt”  carga en la matriz A la matriz que se encuentra en A.txt.
-● save A “A.txt”  salva la matriz A en el fichero especificado.
-● print A "Imprime por pantalla la matriz"
-● clear A "Liampia la matriz A"
-● A = B  "Copia la matriz A en B"
-● exit "Finaliza la ejecucion del programa"
-● A = A + B "Suma las matrices A Y B y almacena el resultado en A"
-● A = A ­- B "Resta a la matriz A, la matriz B y almacena el resultado en A"
-● A = A * b "Multiploca la constante numerica entera b a la matriz A y almacena el resultado en A"
-● A = A * B "Multiplica la matriz A por la matriz B y almacena el resultado en A"
-● A = trans A  "Se almacena en A la matriz transpuesta de A"
-
-* Las funciones no se pueden prosesar si hay mas de una en una linea y si los nombres de las matrices no corresponden a [A-Z].
+********Cabe destacar nuevamente que el archivo entrada.dat se debe encontrar en la carpeta build.
 
